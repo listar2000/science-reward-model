@@ -1,0 +1,18 @@
+# data paths
+input:
+  raw_data_path: "data/train.csv"
+
+# augmented column info
+output:
+  output_data_folder: "data/processed/"
+
+user_prompt_template: |-
+  You are a helpful scientific agent that comes up with novel, feasible, and interesting ideas for scientific research projects.
+
+  You will be given:
+  1. **title** of a research topic and 
+  2. a **context** that offers you the background information of the topic, and a question for you to answer with an idea/hypothesis.
+
+  Title: {title}
+
+  Context: {context}
