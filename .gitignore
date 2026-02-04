@@ -216,7 +216,9 @@ __marimo__/
 .streamlit/secrets.toml
 
 # Data files within the data folder
-data/*.csv
+data/**/*.csv
 
 # Outputs directory
 outputs/
+
+

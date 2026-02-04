@@ -3,6 +3,8 @@ import hydra
 from omegaconf import OmegaConf
 import pandas as pd
 import numpy as np
+import os
+from tqdm import tqdm
 
 
 SCORE_COLUMNS = ["novelty", "probability", "feasibility"]
@@ -14,10 +16,15 @@ FIRST_IDEA_SUFFIX, SECOND_IDEA_SUFFIX = "left", "right"
 def load_raw_data(cfg: DictConfig) -> pd.DataFrame:
     path = cfg.input.raw_data_path
     df = pd.read_csv(path)
+    before_len = len(df)
     # make sure the title and context columns are present
     for col in REQUIRED_COLUMNS:
         assert col in df.columns, f"Column {col} not found in the data"
     df = df.dropna()
+    after_len = len(df)
+    print(
+        f"Loaded {before_len} rows. Dropped {before_len - after_len} rows. Remaining {after_len} rows."
+    )
     return df
 
 
@@ -106,7 +113,9 @@ def dataset_construction(
     raw_df: pd.DataFrame, cfg, group_col: str = "id"
 ) -> pd.DataFrame:
     parts = []
-    for _, g in raw_df.groupby(group_col, sort=False):
+    for _, g in tqdm(
+        raw_df.groupby(group_col, sort=False), desc="Constructing dataset"
+    ):
         df_g = per_group_construction(g, cfg)
         if not df_g.empty:
             parts.append(df_g)
@@ -118,7 +127,17 @@ def dataset_construction(
 )
 def main(cfg: DictConfig):
     OmegaConf.resolve(cfg)
-    print(cfg)
+
+    # fetch the raw daata
+    raw_df = load_raw_data(cfg)
+    # construct the dataset
+    dataset = dataset_construction(raw_df, cfg)
+    # save the dataset
+    output_path = os.path.join(cfg.output.output_data_folder, "dataset.csv")
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    dataset.to_csv(output_path, index=False)
+
+    print(f"Dataset saved to {output_path} with {len(dataset)} rows")
 
 
 if __name__ == "__main__":
