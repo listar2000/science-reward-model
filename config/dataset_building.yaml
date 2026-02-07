@@ -5,6 +5,7 @@ input:
 # augmented column info
 output:
   output_data_folder: "data/processed/"
+  combine_test_sets: False
 
 user_prompt_template: |-
   You are a helpful scientific agent that comes up with novel, feasible, and interesting ideas for scientific research projects.
@@ -16,3 +17,16 @@ user_prompt_template: |-
   Title: {title}
 
   Context: {context}
+
+# train test split
+split:
+  test_ratio: 0.15
+  test_categories: ["natural"]
+  even_split_per_category: True
+  random_state: 42
+
+# huggingface hub upload
+huggingface:
+  upload: false
+  repo_id: "your-username/science-reward-dataset"  # remember to replace/override this when uploading!!!
+  private: true

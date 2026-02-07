@@ -69,3 +69,31 @@ python dataset_building/build_dataset.py output.output_data_folder=data/processe
 ```
 
 This will override the `output_data_folder` in the `dataset_building.yaml` file to `data/processed_v2`.
+
+
+### Building the Dataset
+
+#### 1. Run the pipeline
+
+With `train.csv` in place, build the pairwise dataset and perform the train/test split:
+
+```bash
+python dataset_building/build_dataset.py
+```
+
+Settings (split ratios, test categories, output paths, etc.) live in `config/dataset_building.yaml`.
+Built CSVs are written to `data/processed/` as `built_train.csv`, `built_forced_test.csv`, and `built_extra_test.csv` by default (can also combine the two test sets via overriding the `output.combine_test_sets` setting).
+
+#### 2. Upload to Hugging Face Hub
+
+**Via the pipeline** — set `huggingface.upload: true` and fill in `huggingface.repo_id` in the config, then re-run the build command above.
+
+**Standalone** — upload an existing folder of built CSVs directly:
+
+```bash
+python dataset_building/hf_utils.py --folder data/processed --repo-id user/dataset-name [--public]
+```
+
+Split names are inferred from filenames (`built_<name>.csv` → `<name>`).
+
+Both methods read `HF_TOKEN` from the `.env` file at the project root (see `.env_example`).

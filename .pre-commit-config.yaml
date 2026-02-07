@@ -6,5 +6,7 @@ repos:
     # Run the linter.
     - id: ruff-check
       args: [ --fix ]
+      exclude: ^trl/
     # Run the formatter.
     - id: ruff-format
+      exclude: ^trl/

@@ -1,11 +1,16 @@
-from omegaconf import DictConfig
-import hydra
-from omegaconf import OmegaConf
-import pandas as pd
-import numpy as np
 import os
-from tqdm import tqdm
 
+import hydra
+import numpy as np
+import pandas as pd
+from omegaconf import DictConfig, OmegaConf
+from tqdm import tqdm
+import logging
+
+from filter_utils import category_aware_train_test_split
+from hf_utils import upload_splits_to_hub
+
+logger = logging.getLogger("dataset_building")
 
 SCORE_COLUMNS = ["novelty", "probability", "feasibility"]
 REQUIRED_COLUMNS = ["context_puzzle", "title", "idea"] + SCORE_COLUMNS
@@ -26,6 +31,12 @@ def load_raw_data(cfg: DictConfig) -> pd.DataFrame:
         f"Loaded {before_len} rows. Dropped {before_len - after_len} rows. Remaining {after_len} rows."
     )
     return df
+
+
+def output_path_helper(filename: str, cfg: DictConfig) -> str:
+    path = os.path.join(cfg.output.output_data_folder, filename)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    return path
 
 
 def construct_user_message(
@@ -130,14 +141,60 @@ def main(cfg: DictConfig):
 
     # fetch the raw daata
     raw_df = load_raw_data(cfg)
-    # construct the dataset
-    dataset = dataset_construction(raw_df, cfg)
-    # save the dataset
-    output_path = os.path.join(cfg.output.output_data_folder, "dataset.csv")
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    dataset.to_csv(output_path, index=False)
+    # perform the train test split (using the cfg.split settings)
+    group_ids = pd.Series(raw_df["id"].unique())
+    logger.info(f"Loaded {len(raw_df)} ideas from {len(group_ids)} groups")
 
-    print(f"Dataset saved to {output_path} with {len(dataset)} rows")
+    train_ids, forced_test_ids, extra_test_ids = category_aware_train_test_split(
+        group_ids, **cfg.split
+    )
+    logger.info(
+        f"Split into {len(train_ids)} train groups, {len(forced_test_ids)} forced test groups, {len(extra_test_ids)} extra test groups"
+    )
+
+    train_df = raw_df[raw_df["id"].isin(train_ids)]
+    forced_test_df = raw_df[raw_df["id"].isin(forced_test_ids)]
+    extra_test_df = raw_df[raw_df["id"].isin(extra_test_ids)]
+
+    # construct the dataset
+    train_built_df = dataset_construction(train_df, cfg)
+    forced_test_built_df = dataset_construction(forced_test_df, cfg)
+    extra_test_built_df = dataset_construction(extra_test_df, cfg)
+    logger.info(
+        f"Built {len(train_built_df)} train rows, {len(forced_test_built_df)} forced test rows, {len(extra_test_built_df)} extra test rows"
+    )
+
+    # save the dataset
+    train_path = output_path_helper("built_train.csv", cfg)
+    logger.info(f"Saving train dataset to {train_path}")
+    train_built_df.to_csv(train_path, index=False)
+
+    if cfg.output.combine_test_sets:
+        test_built_df = pd.concat(
+            [forced_test_built_df, extra_test_built_df], ignore_index=True
+        )
+        logger.info(f"Combined test datasets into {len(test_built_df)} rows")
+
+        test_path = output_path_helper("built_test.csv", cfg)
+        logger.info(f"Saving test dataset to {test_path}")
+        test_built_df.to_csv(test_path, index=False)
+    else:
+        test_forced_path: str = output_path_helper("built_forced_test.csv", cfg)
+        test_extra_path: str = output_path_helper("built_extra_test.csv", cfg)
+        logger.info(f"Saving forced test dataset to {test_forced_path}")
+        logger.info(f"Saving extra test dataset to {test_extra_path}")
+        forced_test_built_df.to_csv(test_forced_path, index=False)
+        extra_test_built_df.to_csv(test_extra_path, index=False)
+
+    # optionally upload to Hugging Face Hub
+    if cfg.huggingface.upload:
+        split_paths = {"train": train_path}
+        if cfg.output.combine_test_sets:
+            split_paths["test"] = test_path
+        else:
+            split_paths["forced_test"] = test_forced_path
+            split_paths["extra_test"] = test_extra_path
+        upload_splits_to_hub(split_paths, cfg)
 
 
 if __name__ == "__main__":
