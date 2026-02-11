@@ -20,9 +20,8 @@ import torch.nn as nn
 from accelerate.logging import get_logger
 from datasets import Dataset, IterableDataset
 
-from trl.trainer.reward_trainer import RewardTrainer, get_dataset_column_names
-from trl.trainer.reward_config import RewardConfig
-from trl.trainer.utils import remove_none_values
+from trl import RewardTrainer, RewardConfig
+from typing import Mapping
 
 from training.data_collator import DataCollatorForMultiDimPreference
 
@@ -31,6 +30,33 @@ logger = get_logger(__name__)
 
 # Default dimension names matching our CSV schema
 DEFAULT_DIMENSIONS = ["novelty", "feasibility", "probability"]
+
+
+def get_dataset_column_names(dataset: Dataset | IterableDataset) -> list[str]:
+    return (
+        list(next(iter(dataset)).keys())
+        if dataset.column_names is None
+        else dataset.column_names
+    )
+
+
+def remove_none_values(example):
+    """
+    Recursively removes entries with `None` values from a nested structure (list or dictionary).
+    """
+    if isinstance(example, list):
+        return [
+            remove_none_values(value) if isinstance(value, (dict, list)) else value
+            for value in example
+        ]
+    elif isinstance(example, Mapping):
+        return {
+            key: remove_none_values(value) if isinstance(value, (dict, list)) else value
+            for key, value in example.items()
+            if value is not None
+        }
+    else:
+        raise TypeError("Input must be a list or a dictionary.")
 
 
 class ScienceRewardTrainer(RewardTrainer):

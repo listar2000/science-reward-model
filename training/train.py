@@ -12,7 +12,7 @@ import pandas as pd
 from datasets import Dataset
 from omegaconf import DictConfig, OmegaConf
 
-from trl.trainer.reward_config import RewardConfig
+from trl import RewardConfig
 from training.science_reward_trainer import ScienceRewardTrainer
 
 import os
