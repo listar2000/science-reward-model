@@ -34,7 +34,7 @@ The repo is organized by the different stages of the reward modelling pipeline: 
 ```
 .
 ├── dataset_building/  # <- all the code for building the dataset from raw csv file
-├── reward_model_training/  # <- all the code for training the reward model
+├── training/  # <- all the code for training the reward model
 ├── evaluation/  # <- all the code for evaluating the reward model
 ├── config/  # <- the yaml configuration files for all stages (see below)
 ├── data/  # <- the raw and processed dataset (not tracked by git)
@@ -97,3 +97,50 @@ python dataset_building/hf_utils.py --folder data/processed --repo-id user/datas
 Split names are inferred from filenames (`built_<name>.csv` → `<name>`).
 
 Both methods read `HF_TOKEN` from the `.env` file at the project root (see `.env_example`).
+
+### Training the Reward Model
+
+We train a Bradley-Terry reward model on pairwise comparison data, where each pair is rated on **three dimensions**: novelty, feasibility, and probability. This differs from standard reward model training (which assumes a single chosen/rejected pair) in several ways:
+
+- **Multi-dimensional output**: The model head outputs a 3-d score vector (one per dimension) instead of a scalar.
+- **No fixed chosen/rejected ordering**: Each response can win on some dimensions and lose on others, so the trainer works with symmetric left/right pairs and per-dimension winner labels.
+- **Weighted per-dimension loss**: The final loss is a weighted combination of per-dimension Bradley-Terry losses. Dimension weights are configurable -- setting a weight to zero lets you ignore a dimension entirely.
+- **Vector margins**: Optionally uses the absolute human rating difference per dimension as a margin term in the BT loss.
+
+#### Quick start
+
+All settings live in `config/training.yaml`. To launch training with the defaults:
+
+```bash
+python -m training.train
+```
+
+Override any setting via the command line (Hydra syntax):
+
+```bash
+# Only train on novelty
+python -m training.train dimensions.weights=[1.0,0.0,0.0]
+
+# Change learning rate
+python -m training.train training.learning_rate=5e-5
+
+# Disable margin-augmented loss
+python -m training.train dimensions.use_margins=false
+```
+
+When working with multiple GPUs, you can use the `accelerate` config file to configure the training. For example, to use 8 GPUs, you can run:
+
+```bash
+accelerate launch --config_file config/accelerate/fsdp2.yaml -m training.train
+```
+
+This will use the `fsdp2` config file, which is a pre-configured config file for training on 8 GPUs.
+
+#### Key files
+
+| File | Purpose |
+|---|---|
+| `config/training.yaml` | All hyperparameters (model, data paths, dimension weights, training args) |
+| `training/train.py` | Hydra entry point -- loads data, builds config, runs the trainer |
+| `training/science_reward_trainer.py` | `ScienceRewardTrainer`, a subclass of TRL's `RewardTrainer` with custom dataset preprocessing, multi-dim loss, and per-dimension metrics |
+| `training/data_collator.py` | `DataCollatorForMultiDimPreference`, handles batching/padding of left-right pairs with 3-d signs and margins |

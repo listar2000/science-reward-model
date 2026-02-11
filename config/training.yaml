@@ -1,0 +1,59 @@
+# Science Reward Model Training Configuration
+# Uses Hydra for config management
+
+# Model configuration
+model:
+  name: "Qwen/Qwen3-4B"
+  # num_labels=3 for the 3 scoring dimensions (novelty, feasibility, probability)
+  num_labels: 3
+
+# Data configuration
+data:
+  train_file: "data/processed/built_extra_train.csv"
+  eval_file: "data/processed/built_forced_test.csv"
+
+# Dimension configuration
+# Each comparison is rated on 3 dimensions; weights control their contribution to the final loss.
+# Setting a weight to 0 effectively ignores that dimension.
+dimensions:
+  names:
+    - "novelty"
+    - "feasibility"
+    - "probability"
+  weights:
+    - 1.0
+    - 1.0
+    - 1.0
+  # Whether to use the absolute score difference as a margin in the BT loss.
+  # When true, the model is encouraged to predict a gap proportional to the human rating gap.
+  use_margins: true
+
+# Training arguments (maps to RewardConfig / TrainingArguments)
+# Check out TRL's RewardConfig or Transformers' TrainingArguments for more options.
+training:
+  output_dir: "outputs/science_reward_model"
+  learning_rate: 1.0e-5
+  per_device_train_batch_size: 8
+  per_device_eval_batch_size: 8
+  gradient_accumulation_steps: 2
+  num_train_epochs: 1
+  logging_steps: 10
+  eval_strategy: "steps"
+  eval_steps: 100
+  save_strategy: "no"    # do not save until the end of the training
+  gradient_checkpointing: true
+  bf16: true
+  max_length: 2048
+  disable_dropout: true
+  center_rewards_coefficient: null
+  pad_to_multiple_of: null
+  dataset_num_proc: 4
+  remove_unused_columns: true
+  # related to pushing to huggingface hub
+  push_to_hub: false
+  hub_model_id: null
+  hub_token: null  # default to HF_TOKEN
+  hub_private_repo: true
+  # Wandb logging
+  report_to: "wandb"
+  wandb_project: "science-reward-model"
