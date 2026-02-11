@@ -9,7 +9,7 @@ model:
 
 # Data configuration
 data:
-  train_file: "data/processed/built_extra_train.csv"
+  train_file: "data/processed/built_train.csv"
   eval_file: "data/processed/built_forced_test.csv"
 
 # Dimension configuration
@@ -56,4 +56,6 @@ training:
   hub_private_repo: true
   # Wandb logging
   report_to: "wandb"
-  wandb_project: "science-reward-model"
+
+wandb:
+  project: "science-reward-model"

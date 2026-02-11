@@ -220,5 +220,5 @@ data/**/*.csv
 
 # Outputs directory
 outputs/
-
+wandb/
 

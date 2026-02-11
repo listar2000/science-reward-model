@@ -7,15 +7,17 @@ Usage:
     python -m training.train dimensions.weights=[1.0,0.0,1.0]  # ignore feasibility
 """
 
+import os
+
 import hydra
 import pandas as pd
+import torch
 from datasets import Dataset
 from omegaconf import DictConfig, OmegaConf
+from transformers import AutoModelForSequenceClassification, set_seed
 
 from trl import RewardConfig
 from training.science_reward_trainer import ScienceRewardTrainer
-
-import os
 
 
 def load_csv_dataset(path: str) -> Dataset:
@@ -28,15 +30,24 @@ def load_csv_dataset(path: str) -> Dataset:
 def build_reward_config(cfg: DictConfig) -> RewardConfig:
     """Translate the Hydra config's `training` section into a RewardConfig."""
     training_cfg: dict = OmegaConf.to_container(cfg.training, resolve=True)  # type: ignore
-
-    # Pop keys that aren't valid TrainingArguments fields
-    # (we handle them separately or they map to model_init_kwargs)
-    reward_config = RewardConfig(
-        **training_cfg,
-        # Pass num_labels so the classification head has the right size
-        model_init_kwargs={"num_labels": cfg.model.num_labels},
-    )
+    reward_config = RewardConfig(**training_cfg)
     return reward_config
+
+
+def build_model(cfg: DictConfig, seed: int = 42) -> AutoModelForSequenceClassification:
+    """Pre-instantiate the model with the correct num_labels.
+
+    The upstream RewardTrainer hardcodes num_labels=1 in from_pretrained, so we
+    create the model ourselves and pass the object (not a string) to the trainer,
+    which makes the trainer skip its own from_pretrained call.
+    """
+    set_seed(seed)
+    model = AutoModelForSequenceClassification.from_pretrained(
+        cfg.model.name,
+        num_labels=cfg.model.num_labels,
+        torch_dtype=torch.bfloat16 if cfg.training.bf16 else torch.float32,
+    )
+    return model
 
 
 @hydra.main(config_path="../config", config_name="training", version_base=None)
@@ -44,7 +55,7 @@ def main(cfg: DictConfig) -> None:
     print(OmegaConf.to_yaml(cfg))
 
     # ---- Environment Variables ----
-    os.environ.setdefault("WANDB_PROJECT", cfg.training.wandb_project)
+    os.environ.setdefault("WANDB_PROJECT", cfg.wandb.project)
 
     # ---- Config ----
     reward_config = build_reward_config(cfg)
@@ -60,9 +71,12 @@ def main(cfg: DictConfig) -> None:
     dim_weights = list(cfg.dimensions.weights)
     use_margins = cfg.dimensions.use_margins
 
+    # ---- Model (pre-instantiate to control num_labels) ----
+    model = build_model(cfg, seed=reward_config.seed)
+
     # ---- Trainer ----
     trainer = ScienceRewardTrainer(
-        model=cfg.model.name,
+        model=model,
         args=reward_config,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
