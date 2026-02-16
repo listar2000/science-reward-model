@@ -33,15 +33,17 @@ The repo is organized by the different stages of the reward modelling pipeline: 
 
 ```
 .
-├── dataset_building/  # <- all the code for building the dataset from raw csv file
-├── training/  # <- all the code for training the reward model
-├── evaluation/  # <- all the code for evaluating the reward model
-├── config/  # <- the yaml configuration files for all stages (see below)
-├── data/  # <- the raw and processed dataset (not tracked by git)
-├── requirements.txt  # <- the dependencies for the project
-├── README.md  # <- this file
-├── .gitignore  # <- the gitignore file
-├── .pre-commit-config.yaml  # <- the pre-commit config file
+├── dataset_building/        # Code for constructing the dataset from raw CSV files
+├── training/                # Reward model training pipeline
+├── evaluation/              # Evaluation scripts and metrics
+├── config/                  # YAML configuration files for all stages (see below)
+├── data/                    # Raw and processed datasets (not tracked by git)
+│
+├── requirements.txt         # Project dependencies
+├── README.md                # Project documentation
+├── .gitignore               # Git ignore rules
+└── .pre-commit-config.yaml  # Pre-commit configuration
+└── .env_example             # Example environment variables file
 ```
 
 ### Configuration System

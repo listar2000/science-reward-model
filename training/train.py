@@ -64,12 +64,26 @@ def main(cfg: DictConfig) -> None:
     train_dataset = load_csv_dataset(cfg.data.train_file)
     eval_dataset = None
     if cfg.data.eval_file is not None:
-        eval_dataset = load_csv_dataset(cfg.data.eval_file)
+        eval_file_cfg = OmegaConf.to_container(cfg.data.eval_file, resolve=True)
+        if isinstance(eval_file_cfg, str):
+            # Single eval dataset
+            eval_dataset = load_csv_dataset(eval_file_cfg)
+        elif isinstance(eval_file_cfg, dict):
+            # Multiple eval datasets: {name: path, ...}
+            eval_dataset = {
+                name: load_csv_dataset(path) for name, path in eval_file_cfg.items()
+            }
+        else:
+            raise ValueError(
+                f"data.eval_file must be a string path or a mapping of name → path, "
+                f"got {type(eval_file_cfg)}"
+            )
 
     # ---- Dimension settings ----
     dim_names = list(cfg.dimensions.names)
     dim_weights = list(cfg.dimensions.weights)
     use_margins = cfg.dimensions.use_margins
+    margin_weight = float(cfg.dimensions.get("margin_weight", 1.0))
 
     # ---- Model (pre-instantiate to control num_labels) ----
     model = build_model(cfg, seed=reward_config.seed)
@@ -83,6 +97,7 @@ def main(cfg: DictConfig) -> None:
         dim_names=dim_names,
         dim_weights=dim_weights,
         use_margins=use_margins,
+        margin_weight=margin_weight,
     )
 
     # ---- Train ----

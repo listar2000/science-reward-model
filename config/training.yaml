@@ -8,9 +8,17 @@ model:
   num_labels: 3
 
 # Data configuration
+# eval_file can be a single path (string) or a mapping of name → path for multiple
+# eval datasets. Examples:
+#   eval_file: "data/processed/built_extra_test.csv"          # single eval set
+#   eval_file:                                                 # multiple eval sets
+#     extra_test: "data/processed/built_extra_test.csv"
+#     holdout: "data/processed/built_holdout.csv"
 data:
   train_file: "data/processed/built_train.csv"
-  eval_file: "data/processed/built_forced_test.csv"
+  eval_file:
+    in_distribution: "data/processed/built_extra_test.csv"
+    out_of_distribution: "data/processed/built_forced_test.csv"
 
 # Dimension configuration
 # Each comparison is rated on 3 dimensions; weights control their contribution to the final loss.
@@ -26,7 +34,10 @@ dimensions:
     - 1.0
   # Whether to use the absolute score difference as a margin in the BT loss.
   # When true, the model is encouraged to predict a gap proportional to the human rating gap.
-  use_margins: true
+  use_margins: false
+  # Weight applied to the margin term in the BT loss (only used when use_margins=true).
+  # 1.0 = full margin, 0.0 = effectively disables the margin, >1.0 = amplifies the margin.
+  margin_weight: 0.1
 
 # Training arguments (maps to RewardConfig / TrainingArguments)
 # Check out TRL's RewardConfig or Transformers' TrainingArguments for more options.

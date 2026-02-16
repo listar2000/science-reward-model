@@ -64,9 +64,10 @@ class ScienceRewardTrainer(RewardTrainer):
     Trainer for multi-dimensional Bradley-Terry reward models.
 
     In addition to the standard RewardTrainer arguments, accepts:
-      - dim_names:    list of dimension names (default: novelty, feasibility, probability)
-      - dim_weights:  list of floats weighting each dimension in the final loss
-      - use_margins:  whether to use absolute score differences as BT margins
+      - dim_names:      list of dimension names (default: novelty, feasibility, probability)
+      - dim_weights:    list of floats weighting each dimension in the final loss
+      - use_margins:    whether to use absolute score differences as BT margins
+      - margin_weight:  scalar weight applied to the margin term (default 1.0)
     """
 
     def __init__(
@@ -74,12 +75,14 @@ class ScienceRewardTrainer(RewardTrainer):
         dim_names: list[str] | None = None,
         dim_weights: list[float] | None = None,
         use_margins: bool = True,
+        margin_weight: float = 1.0,
         **kwargs,
     ):
         # Store multi-dim config *before* super().__init__ because it calls _prepare_dataset
         self.dim_names = dim_names or DEFAULT_DIMENSIONS
         self.dim_weights_list = dim_weights or [1.0] * len(self.dim_names)
         self.use_margins = use_margins
+        self.margin_weight = margin_weight
 
         if len(self.dim_weights_list) != len(self.dim_names):
             raise ValueError(
@@ -237,7 +240,9 @@ class ScienceRewardTrainer(RewardTrainer):
 
         # BT loss per sample per dimension
         if "margins" in inputs:
-            per_sample_loss = -nn.functional.logsigmoid(signed_diff - inputs["margins"])
+            per_sample_loss = -nn.functional.logsigmoid(
+                signed_diff - self.margin_weight * inputs["margins"]
+            )
         else:
             per_sample_loss = -nn.functional.logsigmoid(signed_diff)
 
