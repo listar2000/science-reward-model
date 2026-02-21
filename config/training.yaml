@@ -7,6 +7,9 @@ model:
   # num_labels=3 for the 3 scoring dimensions (novelty, feasibility, probability)
   num_labels: 3
 
+# Whether to save the model after training
+save_model: true
+
 # Data configuration
 # eval_file can be a single path (string) or a mapping of name → path for multiple
 # eval datasets. Examples:
@@ -37,7 +40,7 @@ dimensions:
   use_margins: false
   # Weight applied to the margin term in the BT loss (only used when use_margins=true).
   # 1.0 = full margin, 0.0 = effectively disables the margin, >1.0 = amplifies the margin.
-  margin_weight: 0.1
+  margin_weight: 0.0
 
 # Training arguments (maps to RewardConfig / TrainingArguments)
 # Check out TRL's RewardConfig or Transformers' TrainingArguments for more options.

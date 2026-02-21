@@ -29,7 +29,7 @@ def load_csv_dataset(path: str) -> Dataset:
 
 def build_reward_config(cfg: DictConfig) -> RewardConfig:
     """Translate the Hydra config's `training` section into a RewardConfig."""
-    training_cfg: dict = OmegaConf.to_container(cfg.training, resolve=True)  # type: ignore
+    training_cfg: dict = OmegaConf.to_container(cfg.training, resolve=True)
     reward_config = RewardConfig(**training_cfg)
     return reward_config
 
@@ -106,7 +106,8 @@ def main(cfg: DictConfig) -> None:
     trainer.accelerator.print("✅ Training completed.")
 
     # ---- Save ----
-    trainer.save_model(reward_config.output_dir)
+    if cfg.save_model:
+        trainer.save_model(reward_config.output_dir)
     trainer.accelerator.print(f"💾 Model saved to {reward_config.output_dir}")
 
     # ---- Maybe Push to Hub ----
