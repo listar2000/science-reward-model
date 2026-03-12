@@ -14,6 +14,7 @@ import pandas as pd
 import torch
 from datasets import Dataset
 from omegaconf import DictConfig, OmegaConf
+from peft import LoraConfig, TaskType
 from transformers import AutoModelForSequenceClassification, set_seed
 
 from trl import RewardConfig
@@ -32,6 +33,25 @@ def build_reward_config(cfg: DictConfig) -> RewardConfig:
     training_cfg: dict = OmegaConf.to_container(cfg.training, resolve=True)
     reward_config = RewardConfig(**training_cfg)
     return reward_config
+
+
+def build_lora_config(cfg: DictConfig) -> LoraConfig | None:
+    """Build a PEFT LoraConfig from the Hydra config's `lora` section.
+
+    Returns None when lora_rank is 0 (full parameter training).
+    """
+    lora_rank: int = cfg.lora.lora_rank
+    if lora_rank == 0:
+        return None
+
+    target_modules = list(cfg.lora.target_modules)
+    return LoraConfig(
+        task_type=TaskType.SEQ_CLS,
+        r=lora_rank,
+        lora_alpha=cfg.lora.lora_alpha,
+        lora_dropout=cfg.lora.lora_dropout,
+        target_modules=target_modules,
+    )
 
 
 def build_model(cfg: DictConfig, seed: int = 42) -> AutoModelForSequenceClassification:
@@ -85,6 +105,9 @@ def main(cfg: DictConfig) -> None:
     use_margins = cfg.dimensions.use_margins
     margin_weight = float(cfg.dimensions.get("margin_weight", 1.0))
 
+    # ---- LoRA (optional) ----
+    peft_config = build_lora_config(cfg)
+
     # ---- Model (pre-instantiate to control num_labels) ----
     model = build_model(cfg, seed=reward_config.seed)
 
@@ -94,6 +117,7 @@ def main(cfg: DictConfig) -> None:
         args=reward_config,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
+        peft_config=peft_config,
         dim_names=dim_names,
         dim_weights=dim_weights,
         use_margins=use_margins,
