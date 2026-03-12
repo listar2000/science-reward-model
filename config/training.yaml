@@ -7,6 +7,17 @@ model:
   # num_labels=3 for the 3 scoring dimensions (novelty, feasibility, probability)
   num_labels: 3
 
+# LoRA configuration (via PEFT)
+# Set lora_rank to 0 to use full parameter training (no LoRA).
+# Any positive value enables LoRA with that rank.
+lora:
+  lora_rank: 0
+  lora_alpha: 16
+  lora_dropout: 0.05
+  target_modules:
+    - "q_proj"
+    - "v_proj"
+
 # Whether to save the model after training
 save_model: true
 
