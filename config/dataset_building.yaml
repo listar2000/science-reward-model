@@ -6,21 +6,43 @@ input:
 output:
   output_data_folder: "data/processed/"
   combine_test_sets: False
+  
+# pairing strategy: "exhaustive" (all C(n,2) pairs) or "adjacent" (only adjacent ranks by avg score)
+pairing_strategy: "adjacent"
 
-user_prompt_template: |-
-  You are a helpful scientific agent that comes up with novel, feasible, and interesting ideas for scientific research projects.
+# user_prompt_template: |-
+#   You are a helpful scientific agent that comes up with novel, feasible, and interesting ideas for scientific research projects.
 
-  You will be given:
-  1. **title** of a research topic and 
-  2. a **context** that offers you the background information of the topic, and a question for you to answer with an idea/hypothesis.
+#   You will be given:
+#   1. **title** of a research topic and 
+#   2. a **context** that offers you the background information of the topic, and a question for you to answer with an idea/hypothesis.
 
-  Title: {title}
+#   Title: {title}
 
-  Context: {context}
+#   Context: {context}
+
+user_prompt_template: |-     
+    You are an experienced scientist evaluating a scientific hypothesis.
+    You will be given:
+    1. the **title** of a research paper
+    2. the **context**: background information and the research puzzle of the paper
+
+    Your task:
+    Evaluate the hypothesis on three dimensions: novelty, feasibility, and probability of being true, according to the following criteria:
+    - **Novelty**: Evaluate the extent to which the hypotheses, generated based on the given context, introduce new ideas beyond the context.
+    - **Feasibility**: Evaluate the extent to which the hypotheses, generated based on the given context, can be feasibly tested, measured, or empirically
+  investigated.
+    - **Probability of being true**: Evaluate the extent to which the hypotheses, generated based on the given context, appear to be true - logically coherent,
+  grounded in existing knowledge, and seemingly valid.
+
+    Title: {title}
+    Context: {context}
+
+
 
 # train test split
 split:
-  test_ratio: 0.15
+  test_ratio: 0.1
   test_categories: ["natural"]
   even_split_per_category: True
   random_state: 42

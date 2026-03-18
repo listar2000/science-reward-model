@@ -120,14 +120,130 @@ def per_group_construction(group_df: pd.DataFrame, cfg: DictConfig) -> pd.DataFr
     return pd.DataFrame(out)
 
 
+def per_group_construction_adjacent(
+    group_df: pd.DataFrame, cfg: DictConfig
+) -> pd.DataFrame:
+    """
+    Sort the responses by their average human score (across novelty, probability, feasibility),
+    then only create pairs between adjacent ranks: Rank 1 vs 2, Rank 2 vs 3, etc.
+    """
+    if len(group_df) < 2:
+        return pd.DataFrame()
+
+    # Compute average score across all score columns and sort descending
+    group_df = group_df.copy()
+    group_df["avg_score"] = group_df[SCORE_COLUMNS].mean(axis=1)
+    group_df = group_df.sort_values("avg_score", ascending=False).reset_index(drop=True)
+
+    first_row = group_df.iloc[0]
+    group_id = first_row["id"]
+    group_rater = first_row["rater"]
+    group_user_message = construct_user_message(
+        first_row["title"], first_row["context_puzzle"], cfg
+    )
+
+    ideas = group_df["idea"].to_numpy()
+    scores = {c: group_df[c].to_numpy() for c in SCORE_COLUMNS}
+    m = len(group_df) - 1  # number of adjacent pairs
+
+    # Adjacent pairs: (0,1), (1,2), (2,3), (3,4)
+    first_idx = np.arange(m)
+    second_idx = np.arange(1, m + 1)
+
+    out = {
+        "id": np.repeat(group_id, m),
+        "rater": np.repeat(group_rater, m),
+        "user_message": [group_user_message] * m,
+        f"assistant_message_{FIRST_IDEA_SUFFIX}": [
+            construct_assistant_message(idea) for idea in ideas[first_idx]
+        ],
+        f"assistant_message_{SECOND_IDEA_SUFFIX}": [
+            construct_assistant_message(idea) for idea in ideas[second_idx]
+        ],
+    }
+
+    for score_col in SCORE_COLUMNS:
+        first_scores = scores[score_col][first_idx]
+        second_scores = scores[score_col][second_idx]
+        out[f"{score_col}_{FIRST_IDEA_SUFFIX}"] = first_scores
+        out[f"{score_col}_{SECOND_IDEA_SUFFIX}"] = second_scores
+        winners = np.where(
+            first_scores > second_scores,
+            FIRST_IDEA_SUFFIX,
+            np.where(first_scores < second_scores, SECOND_IDEA_SUFFIX, "tie"),
+        )
+        out[f"winner_{score_col}"] = winners
+
+    return pd.DataFrame(out)
+
+
+def per_group_construction_extreme(
+    group_df: pd.DataFrame, cfg: DictConfig
+) -> pd.DataFrame:
+    """
+    Sort responses by average human score, then only pair the best (rank 1) vs worst (rank N).
+    Produces exactly 1 pair per group.
+    """
+    if len(group_df) < 2:
+        return pd.DataFrame()
+
+    group_df = group_df.copy()
+    group_df["avg_score"] = group_df[SCORE_COLUMNS].mean(axis=1)
+    group_df = group_df.sort_values("avg_score", ascending=False).reset_index(drop=True)
+
+    best_row = group_df.iloc[0]
+    worst_row = group_df.iloc[-1]
+
+    group_id = best_row["id"]
+    group_rater = best_row["rater"]
+    group_user_message = construct_user_message(
+        best_row["title"], best_row["context_puzzle"], cfg
+    )
+
+    out = {
+        "id": [group_id],
+        "rater": [group_rater],
+        "user_message": [group_user_message],
+        f"assistant_message_{FIRST_IDEA_SUFFIX}": [
+            construct_assistant_message(best_row["idea"])
+        ],
+        f"assistant_message_{SECOND_IDEA_SUFFIX}": [
+            construct_assistant_message(worst_row["idea"])
+        ],
+    }
+
+    for score_col in SCORE_COLUMNS:
+        first_score = best_row[score_col]
+        second_score = worst_row[score_col]
+        out[f"{score_col}_{FIRST_IDEA_SUFFIX}"] = [first_score]
+        out[f"{score_col}_{SECOND_IDEA_SUFFIX}"] = [second_score]
+        if first_score > second_score:
+            winner = FIRST_IDEA_SUFFIX
+        elif first_score < second_score:
+            winner = SECOND_IDEA_SUFFIX
+        else:
+            winner = "tie"
+        out[f"winner_{score_col}"] = [winner]
+
+    return pd.DataFrame(out)
+
+
 def dataset_construction(
     raw_df: pd.DataFrame, cfg, group_col: str = "id"
 ) -> pd.DataFrame:
+    strategy = cfg.get("pairing_strategy", "exhaustive")
+    if strategy == "adjacent":
+        constructor = per_group_construction_adjacent
+    elif strategy == "extreme":
+        constructor = per_group_construction_extreme
+    else:
+        constructor = per_group_construction
+
     parts = []
     for _, g in tqdm(
-        raw_df.groupby(group_col, sort=False), desc="Constructing dataset"
+        raw_df.groupby(group_col, sort=False), desc=f"Constructing dataset ({strategy})"
     ):
-        df_g = per_group_construction(g, cfg)
+        df_g = constructor(g, cfg)
         if not df_g.empty:
             parts.append(df_g)
     return pd.concat(parts, ignore_index=True) if parts else pd.DataFrame()

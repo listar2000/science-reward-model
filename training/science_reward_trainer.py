@@ -92,8 +92,14 @@ class ScienceRewardTrainer(RewardTrainer):
 
         # Let the parent handle model / tokenizer / PEFT / etc.
         # The parent will also create a DataCollatorForPreference -- we replace it below.
+        # Before super().__init__(**kwargs)
+        model = kwargs.get("model")
+        true_num_labels = model.config.num_labels
+        model.config.num_labels = 1  # spoof TRL 0.29's check
+
         super().__init__(**kwargs)
 
+        self.model.config.num_labels = true_num_labels  # restore
         # Replace the data collator with our multi-dimensional version
         self.data_collator = DataCollatorForMultiDimPreference(
             pad_token_id=self.processing_class.pad_token_id,
@@ -214,6 +220,28 @@ class ScienceRewardTrainer(RewardTrainer):
                 "signs",
                 "margins",
             ]
+
+    # ------------------------------------------------------------------
+    # Logging
+    # ------------------------------------------------------------------
+
+    def log(self, logs: dict[str, float], start_time: float | None = None) -> None:
+        mode = "train" if self.model.training else "eval"
+        metrics = {key: sum(val) / len(val) for key, val in self._metrics[mode].items()}
+
+        if mode == "eval":
+            # Detect the actual split prefix (e.g. "eval_in_distribution_") from
+            # the keys already in logs, so each split's custom metrics are logged
+            # separately instead of being overwritten under the same "eval_<metric>".
+            prefix = next(
+                (k.rsplit("_", 1)[0] + "_" for k in logs if k.startswith("eval_")),
+                "eval_",
+            )
+            metrics = {f"{prefix}{key}": val for key, val in metrics.items()}
+
+        logs = {**logs, **metrics}
+        super(RewardTrainer, self).log(logs, start_time)
+        self._metrics[mode].clear()
 
     # ------------------------------------------------------------------
     # Loss computation

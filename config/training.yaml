@@ -29,10 +29,8 @@ save_model: true
 #     extra_test: "data/processed/built_extra_test.csv"
 #     holdout: "data/processed/built_holdout.csv"
 data:
-  train_file: "data/processed/built_train.csv"
-  eval_file:
-    in_distribution: "data/processed/built_extra_test.csv"
-    out_of_distribution: "data/processed/built_forced_test.csv"
+  train_file: "data/processed_biology/built_train.csv"
+  eval_file: null  # auto-discovers built_ID_test_*.csv and built_OOD_test_*.csv from the same folder
 
 # Dimension configuration
 # Each comparison is rated on 3 dimensions; weights control their contribution to the final loss.
@@ -48,23 +46,25 @@ dimensions:
     - 1.0
   # Whether to use the absolute score difference as a margin in the BT loss.
   # When true, the model is encouraged to predict a gap proportional to the human rating gap.
-  use_margins: false
-  # Weight applied to the margin term in the BT loss (only used when use_margins=true).
-  # 1.0 = full margin, 0.0 = effectively disables the margin, >1.0 = amplifies the margin.
-  margin_weight: 0.0
+
+  use_margins: true
+  margin_weight: 0.1
 
 # Training arguments (maps to RewardConfig / TrainingArguments)
 # Check out TRL's RewardConfig or Transformers' TrainingArguments for more options.
 training:
   output_dir: "outputs/science_reward_model"
   learning_rate: 1.0e-5
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.05
+  run_name: "margin_0.1" 
   per_device_train_batch_size: 8
   per_device_eval_batch_size: 8
   gradient_accumulation_steps: 2
   num_train_epochs: 1
   logging_steps: 10
   eval_strategy: "steps"
-  eval_steps: 100
+  eval_steps: 10
   save_strategy: "no"    # do not save until the end of the training
   gradient_checkpointing: true
   bf16: true

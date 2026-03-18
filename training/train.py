@@ -61,10 +61,17 @@ def build_model(cfg: DictConfig, seed: int = 42) -> AutoModelForSequenceClassifi
     create the model ourselves and pass the object (not a string) to the trainer,
     which makes the trainer skip its own from_pretrained call.
     """
+    from transformers import AutoConfig
+
     set_seed(seed)
+    config = AutoConfig.from_pretrained(cfg.model.name, num_labels=cfg.model.num_labels)
+    # Multimodal models (e.g. Qwen3.5) have a nested text_config that controls the
+    # score head size; the top-level num_labels alone is not enough.
+    if hasattr(config, "text_config"):
+        config.text_config.num_labels = cfg.model.num_labels
     model = AutoModelForSequenceClassification.from_pretrained(
         cfg.model.name,
-        num_labels=cfg.model.num_labels,
+        config=config,
         torch_dtype=torch.bfloat16 if cfg.training.bf16 else torch.float32,
     )
     return model
@@ -98,6 +105,23 @@ def main(cfg: DictConfig) -> None:
                 f"data.eval_file must be a string path or a mapping of name → path, "
                 f"got {type(eval_file_cfg)}"
             )
+    else:
+        # Auto-discover eval files from the same folder as train_file.
+        # Picks up any built_ID_test_*.csv and built_OOD_test_*.csv files,
+        # using the filename stem (minus "built_") as the WandB split name.
+        data_folder = os.path.dirname(cfg.data.train_file)
+        discovered = {}
+        for fname in sorted(os.listdir(data_folder)):
+            if fname.startswith(
+                ("built_ID_test_", "built_OOD_test_")
+            ) and fname.endswith(".csv"):
+                name = fname[len("built_") : -len(".csv")]  # e.g. "ID_test_biology"
+                discovered[name] = os.path.join(data_folder, fname)
+        if discovered:
+            eval_dataset = {
+                name: load_csv_dataset(path) for name, path in discovered.items()
+            }
+            print(f"Auto-discovered eval datasets: {list(discovered.keys())}")
 
     # ---- Dimension settings ----
     dim_names = list(cfg.dimensions.names)
