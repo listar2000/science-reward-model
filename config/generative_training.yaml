@@ -1,0 +1,58 @@
+# Generative Model Training Configuration
+# Uses Hydra for config management
+
+# Model configuration
+model:
+  name: "Qwen/Qwen3-4B"
+
+# LoRA configuration (via PEFT)
+# Set lora_rank to 0 to use full parameter training (no LoRA).
+# Any positive value enables LoRA with that rank.
+lora:
+  lora_rank: 0
+  lora_alpha: 16
+  lora_dropout: 0.05
+  target_modules:
+    - "q_proj"
+    - "v_proj"
+
+# Whether to save the model after training
+save_model: true
+
+# Data configuration
+# eval_file can be a single path (string) or a mapping of name -> path for multiple eval datasets.
+data:
+  train_file: "data/generative_processed/built_train.csv"
+  eval_file: null  # auto-discovers built_ID_test_*.csv and built_OOD_test_*.csv from the same folder
+
+# Training arguments (maps to TRL's SFTConfig)
+# Check out TRL's SFTConfig for more options.
+training:
+  output_dir: "outputs/science_generative_model"
+  learning_rate: 1.0e-5
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.05
+  run_name: "sft"
+  per_device_train_batch_size: 8
+  per_device_eval_batch_size: 8
+  gradient_accumulation_steps: 2
+  num_train_epochs: 1
+  logging_steps: 10
+  eval_strategy: "steps"
+  eval_steps: 10
+  save_strategy: "no"  # do not save until the end of training
+  bf16: true
+  max_length: 2048
+  remove_unused_columns: true
+  seed: 42
+  gradient_checkpointing: true
+  # Related to pushing to Hugging Face Hub
+  push_to_hub: false
+  hub_model_id: null
+  hub_token: null  # default to HF_TOKEN
+  hub_private_repo: true
+  # Wandb logging
+  report_to: "wandb"
+
+wandb:
+  project: "science-generative-model"
