@@ -1,4 +1,20 @@
-## Scientific Idea Reward Modelling
+# Contemporary AI Lacks the Imagination to Diverge or Negate in Science
+
+[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Checkpoints-yellow)](https://huggingface.co/) <!-- TODO: replace with the actual HF collection/model link -->
+
+This is the official codebase for the manuscript **"Contemporary AI lacks the imagination to diverge or negate in science."** The project studies how human scientists evaluate research ideas along three dimensions -- **novelty**, **feasibility**, and **probability of success** -- and trains reward models that learn these human preferences from large-scale pairwise comparisons of scientific ideas.
+
+The repository covers the full pipeline used in the paper:
+
+- **Dataset building** -- turning raw human-rated comparisons into a pairwise preference dataset (`dataset_building/`).
+- **Reward model training** -- a multi-dimensional Bradley-Terry reward model trained on those preferences (`training/`).
+- **Analysis** -- notebooks reproducing the statistical analyses and dataset figures reported in the manuscript (`analysis/`).
+
+### Model Checkpoints
+
+The trained reward models are hosted on the Hugging Face Hub:
+
+> 🤗 **[Hugging Face checkpoints](https://huggingface.co/)** &nbsp;<!-- TODO: replace placeholder with the real link -->&nbsp;*(link to be released)*
 
 ### Getting Started
 
@@ -36,6 +52,7 @@ The repo is organized by the different stages of the reward modelling pipeline: 
 ├── dataset_building/        # Code for constructing the dataset from raw CSV files
 ├── training/                # Reward model training pipeline
 ├── evaluation/              # Evaluation scripts and metrics
+├── analysis/                # Notebooks for statistical analysis and dataset figures
 ├── config/                  # YAML configuration files for all stages (see below)
 ├── data/                    # Raw and processed datasets (not tracked by git)
 │
@@ -146,3 +163,15 @@ This will use the `fsdp2` config file, which is a pre-configured config file for
 | `training/train.py` | Hydra entry point -- loads data, builds config, runs the trainer |
 | `training/science_reward_trainer.py` | `ScienceRewardTrainer`, a subclass of TRL's `RewardTrainer` with custom dataset preprocessing, multi-dim loss, and per-dimension metrics |
 | `training/data_collator.py` | `DataCollatorForMultiDimPreference`, handles batching/padding of left-right pairs with 3-d signs and margins |
+
+### Analysis
+
+The `analysis/` folder contains the notebooks used to produce the statistical
+results and dataset figures in the manuscript:
+
+| Notebook | Purpose |
+|---|---|
+| `analysis/regression_analysis.ipynb` | Regression models relating researcher seniority (citations, academic age, publication count) to idea-selection behavior and to rated novelty/feasibility/probability. |
+| `analysis/field_distribution.ipynb` | Summary and visualization of the dataset's distribution across scientific fields. |
+
+Both notebooks read the `train.csv` described in [`data/README.md`](data/README.md). See [`analysis/README.md`](analysis/README.md) for details.
