@@ -8,7 +8,7 @@ The repository covers the full pipeline used in the paper:
 
 - **Dataset building** -- turning raw human-rated comparisons into a pairwise preference dataset (`dataset_building/`).
 - **Reward model training** -- a multi-dimensional Bradley-Terry reward model trained on those preferences (`training/`).
-- **Analysis** -- notebooks reproducing the statistical analyses and dataset figures reported in the manuscript (`analysis/`).
+- **Analysis** -- notebooks reproducing the statistical analyses in the manuscript (`analysis/`).
 
 ### Model Checkpoints
 
@@ -41,18 +41,18 @@ For better code quality, please install the pre-commit hooks by running:
 pre-commit install
 ```
 
-this ensures that your code will be auto-formatted and checked for errors before your commits take effect.
+This ensures that your code will be auto-formatted and checked for errors before your commits take effect.
 
 ### File Structure
 
-The repo is organized by the different stages of the reward modelling pipeline: `dataset_building`, reward model `training`, and `evaluation`. A overview of the file structure is as follows:
+The repo is organized by the different stages of the reward modelling pipeline: `dataset_building`, reward model `training`, and `evaluation`. An overview of the file structure is as follows:
 
 ```
 .
 ├── dataset_building/        # Code for constructing the dataset from raw CSV files
 ├── training/                # Reward model training pipeline
 ├── evaluation/              # Evaluation scripts and metrics
-├── analysis/                # Notebooks for statistical analysis and dataset figures
+├── analysis/                # Notebooks for statistical analysis
 ├── config/                  # YAML configuration files for all stages (see below)
 ├── data/                    # Raw and processed datasets (not tracked by git)
 │
@@ -76,7 +76,7 @@ In short, the config for each component is stored within a `.yaml` file in the `
 def main(cfg: DictConfig):
     OmegaConf.resolve(cfg)  # this helps resolve variables like ${x.y.z} to the actual values
     
-    # fetch the raw daata
+    # fetch the raw data
     raw_df = load_raw_data(cfg)
     # ...rest of the code
 ```
@@ -167,11 +167,10 @@ This will use the `fsdp2` config file, which is a pre-configured config file for
 ### Analysis
 
 The `analysis/` folder contains the notebooks used to produce the statistical
-results and dataset figures in the manuscript:
+results in the manuscript:
 
 | Notebook | Purpose |
 |---|---|
-| `analysis/regression_analysis.ipynb` | Regression models relating researcher seniority (citations, academic age, publication count) to idea-selection behavior and to rated novelty/feasibility/probability. |
-| `analysis/field_distribution.ipynb` | Summary and visualization of the dataset's distribution across scientific fields. |
+| `analysis/regression_analysis.ipynb` | Regression models relating researcher seniority (citations, academic age, publication count) to idea-selection behavior and to rated novelty/feasibility/probability, as well as their interaction effects. Replication of SOTA models. |
 
 Both notebooks read the `train.csv` described in [`data/README.md`](data/README.md). See [`analysis/README.md`](analysis/README.md) for details.
