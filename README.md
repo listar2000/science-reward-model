@@ -8,7 +8,7 @@ The repository covers the full pipeline used in the paper:
 
 - **Dataset building** -- turning raw human-rated comparisons into a pairwise preference dataset (`dataset_building/`).
 - **Reward model training** -- a multi-dimensional Bradley-Terry reward model trained on those preferences (`training/`).
-- **Analysis** -- notebooks reproducing the statistical analyses in the manuscript (`analysis/`).
+- **Analysis** -- a notebook reproducing the statistical analyses in the manuscript (`analysis/`).
 
 ### Model Checkpoints
 
@@ -166,11 +166,11 @@ This will use the `fsdp2` config file, which is a pre-configured config file for
 
 ### Analysis
 
-The `analysis/` folder contains the notebooks used to produce the statistical
+The `analysis/` folder contains the notebook used to produce the statistical
 results in the manuscript:
 
 | Notebook | Purpose |
 |---|---|
 | `analysis/regression_analysis.ipynb` | Regression models relating researcher seniority (citations, academic age, publication count) to idea-selection behavior and to rated novelty/feasibility/probability, as well as their interaction effects. Replication of SOTA models. |
 
-Both notebooks read the `train.csv` described in [`data/README.md`](data/README.md). See [`analysis/README.md`](analysis/README.md) for details.
+The notebook reads the `train.csv` described in [`data/README.md`](data/README.md). See [`analysis/README.md`](analysis/README.md) for details.
