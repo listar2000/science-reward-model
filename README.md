@@ -14,7 +14,7 @@ The repository covers the full pipeline used in the paper:
 
 The trained reward models are hosted on the Hugging Face Hub:
 
-> 🤗 **[Hugging Face checkpoints](https://huggingface.co/)** &nbsp;<!-- TODO: replace placeholder with the real link -->&nbsp;*(link to be released)*
+> 🤗 **[Hugging Face checkpoints](https://huggingface.co/)** &nbsp; https://huggingface.co/UchiKlab/science-reward-model &nbsp;*(link to be released)*
 
 ### Getting Started
 
