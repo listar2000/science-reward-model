@@ -1,6 +1,6 @@
 # Contemporary AI Lacks the Imagination to Diverge or Negate in Science
 
-[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Checkpoints-yellow)](https://huggingface.co/) <!-- TODO: replace with the actual HF collection/model link -->
+[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Checkpoints-yellow)]([https://huggingface.co/](https://huggingface.co/UchiKlab/science-reward-model)) <!-- TODO: replace with the actual HF collection/model link -->
 
 This is the official codebase for the manuscript **"Contemporary AI lacks the imagination to diverge or negate in science."** The project studies how human scientists evaluate research ideas along three dimensions -- **novelty**, **feasibility**, and **probability of success** -- and trains reward models that learn these human preferences from large-scale pairwise comparisons of scientific ideas.
 
