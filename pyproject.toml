@@ -3,6 +3,3 @@ name = "science-reward-model"
 version = "0.1.0"
 description = "Multi-dimensional Bradley-Terry reward model for scientific idea evaluation"
 requires-python = ">=3.12"
-
-[tool.ty.environment]
-extra-paths = ["./trl"]

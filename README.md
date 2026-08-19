@@ -16,6 +16,16 @@ The trained reward models are hosted on the Hugging Face Hub:
 
 > 🤗 **[Hugging Face checkpoints](https://huggingface.co/UchiKlab/science-reward-model)**
 
+### Data Availability
+
+The raw and processed datasets used to train and evaluate every checkpoint are
+included directly in this repository under [`data/`](data/README.md)
+(gzip-compressed; see that folder's README for contents and how to decompress).
+
+### Code Availability
+
+All code needed to reproduce the pipeline end to end -- dataset building,
+training, and analysis -- is contained in this repository.
 
 ### Getting Started
 
@@ -46,13 +56,12 @@ This ensures that your code will be auto-formatted and checked for errors before
 
 ### File Structure
 
-The repo is organized by the different stages of the reward modelling pipeline: `dataset_building`, reward model `training`, and `evaluation`. An overview of the file structure is as follows:
+The repo is organized by the different stages of the reward modelling pipeline: `dataset_building` and reward model `training`. An overview of the file structure is as follows:
 
 ```
 .
 ├── dataset_building/        # Code for constructing the dataset from raw CSV files
 ├── training/                # Reward model training pipeline
-├── evaluation/              # Evaluation scripts and metrics
 ├── analysis/                # Notebooks for statistical analysis
 ├── config/                  # YAML configuration files for all stages (see below)
 ├── data/                    # Raw and processed datasets (not tracked by git)

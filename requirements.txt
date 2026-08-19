@@ -1,5 +1,7 @@
+accelerate==1.13.0
 antlr4-python3-runtime==4.9.3
 cfgv==3.5.0
+datasets==4.6.1
 distlib==0.4.0
 filelock==3.20.3
 huggingface-hub>=0.25.0
@@ -9,7 +11,7 @@ nodeenv==1.10.0
 numpy==2.4.2
 omegaconf==2.3.0
 pandas==3.0.0
-peft>=0.11.0
+peft==0.18.1
 platformdirs==4.5.1
 pre-commit==4.5.1
 python-dateutil==2.9.0.post0
@@ -17,7 +19,10 @@ python-dotenv>=1.0.0
 pyyaml==6.0.3
 setuptools==80.10.2
 six==1.17.0
+torch==2.10.0+cu128
 tqdm==4.67.3
+transformers==5.3.0
+trl==0.29.0
 uv==0.9.29
 virtualenv==20.36.1
 wheel==0.46.3
